@@ -2,3 +2,11 @@
 Machine Learning project with pytorch
 
 <p> This project use <a href="https://pytorch.org">pytorch</a> 0.4.1 </p>
+
+<br>
+Esse projeto consite em 2 arquivos (IPND) IPython Notebook Document cada um com suas especificações:
+* Neural Networking Training - Step by step.ipynb -> Passo a passo de como criar uma rede neural.
+* Neural Networking Training - Direct.ipynb -> Arquivo contendo de forma direta como criar uma rede neural, esse arquivo fará uso do utilitario em Python.
+
+<br>
+<b>Utilitario em python:</b>network_helper.py
