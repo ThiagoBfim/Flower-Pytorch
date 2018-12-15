@@ -1,11 +1,3 @@
-'''
-Data_dir = Diretorio onde está as imagens
-Batch_size é o numero de elementos que será carregado a cada iteração, serve para não carregar todos os dados de uma unica vez e deixar o treinamento do modelo muito lerdo.
-Image_size = Tamanho da imagem
-norm_mean = [0.485, 0.456, 0.406]
-norm_std = [0.229, 0.224, 0.225]
-'''
-
 # Imports here
 import os
 import numpy as np
@@ -20,7 +12,15 @@ import matplotlib.pyplot as plt
 
 
 train_on_gpu = torch.cuda.is_available()
-    
+   
+'''
+Data_dir = Diretorio onde está as imagens
+Batch_size é o numero de elementos que será carregado a cada iteração, serve para não carregar todos os dados de uma unica vez e deixar o treinamento do modelo muito lerdo.
+Image_size = Tamanho da imagem
+Norm_mean = É o normalize the means
+Norm_std = É o standard deviations
+Os valores da normalização da media e do desvio padrão vai modificar a cor das imagens para ficar centralizado em 0 com range entre -1 e 1.
+'''
 def load_dataset(data_dir='flower_data', batch_size=20, image_size=224, norm_mean=[0.485, 0.456, 0.406], norm_std=[0.229, 0.224, 0.225]):
     #Para carregar é necessário que já o dataset encontre-se no mesmo diretorio que esse arquivo.
     train_dir = data_dir + '/train'
@@ -56,7 +56,6 @@ def create_network(numb_output):
     return redeNeural
     
 def _create_grafico_accuracy(train_losses, test_losses):
-
     plt.plot(train_losses, label='Training loss')
     plt.plot(test_losses, label='Validation loss')
     plt.legend(frameon=False)
@@ -66,9 +65,9 @@ def _validation(model, testloader, criterion):
     test_loss = 0
     accuracy = 0
     for batch_i, (images, labels) in enumerate(testloader):
-
-        #images.resize_(images.size()[0], model.fc.in_features)
-        images, labels = images.to(device), labels.to(device)
+        
+        if train_on_gpu:
+            images, labels = images.cuda(), labels.cuda()
 
         output = model(images)
         test_loss += criterion(output, labels).item()
@@ -132,7 +131,7 @@ def train_network(redeNeural, train_loader, numb_epochs=20, name_file='model-sav
 def _reload_module(file='model-saved.pth'):
     return torch.load(file)           
                 
-def valid_network(test_loader, redeNeural, classes, criterion = nn.CrossEntropyLoss(), batch_size=20):
+def valid_network(test_loader, redeNeural, classes, criterion = nn.CrossEntropyLoss()):
     test_loss = 0.0
     size = len(classes);
 
@@ -159,22 +158,19 @@ def valid_network(test_loader, redeNeural, classes, criterion = nn.CrossEntropyL
         # compare predictions to true label
         correct = np.squeeze(pred.eq(target.data.view_as(pred)))
         # calculate test accuracy for each object class
-        for i in range(batch_size):
-            try:
-                label = target.data[i]
-                class_correct[label] += correct[i].item()
-                class_total[label] += 1
-            except:
-                print(target.size())
-                print("Não foi encontrado o dataset de teste para a classe: ", classes[i])
+        for i in range(pred.size()[0]):
+            label = target.data[i]
+            class_correct[label] += correct[i].item()
+            class_total[label] += 1
 
-    redeNeural.train()
+    redeNeural.train() # return model to train
+    
     # calculate and print avg test loss
     test_loss = test_loss/len(test_loader.dataset)
     test_losses.append(test_loss/len(test_loader))
     print('Test Loss: {:.6f}\n'.format(test_loss))
 
-    print('\nTest Accuracy (Overall): %2d%% (%2d/%2d)' % (
+    print('Test Accuracy (Overall): %2d%% (%2d/%2d)' % (
         100. * np.sum(class_correct) / np.sum(class_total),
         np.sum(class_correct), np.sum(class_total)))
     
@@ -183,11 +179,11 @@ def show_image_validate(test_loader, redeNeural, classes):
     dataiter = iter(test_loader)
     images, labels = dataiter.next()
 
-
     # move model inputs to cuda, if GPU available
     if train_on_gpu:
         imagesCuda = images.cuda()
         redeNeural.cuda()
+        
     output = redeNeural(imagesCuda)
 
     # convert output probabilities to predicted class
