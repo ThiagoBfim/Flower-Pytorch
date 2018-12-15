@@ -1,2 +1,5 @@
 flower_data/
+
 model-saved.pth
+
+__pycache__
